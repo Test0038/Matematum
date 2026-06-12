@@ -97,8 +97,8 @@
         .super-btn { grid-column: 1 / -1; }
 
         /* --- КОЛЁСА ПАРАМЕТРОВ (iOS-стиль) --- */
-        .params { display: flex; justify-content: center; gap: 10px; margin-bottom: 2px; }
-        .param { display: flex; flex-direction: column; align-items: center; width: 140px; }
+        .params { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 2px; }
+        .param { display: flex; flex-direction: column; align-items: center; }
         .param > label { font-size: .73rem; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; letter-spacing: .3px; }
         .picker {
             position: relative; width: 100%; height: 120px; border-radius: 16px; overflow: hidden;
@@ -176,6 +176,12 @@
             font-size: .95rem; font-weight: 800; color: var(--text-muted); opacity: .55;
             line-height: 1; font-variant-numeric: tabular-nums;
         }
+        #card-timer {
+            position: absolute; bottom: 13px; width: 100%; text-align: center;
+            font-size: .95rem; font-weight: 800; color: var(--text-muted); opacity: .55;
+            line-height: 1; font-variant-numeric: tabular-nums;
+        }
+        #card-timer.low { color: var(--error-color); opacity: .9; }
         #word-display {
             font-size: 3rem; font-weight: 900; color: #fff; margin: 0;
             text-align: center; line-height: 1.05; padding: 0 12px; white-space: nowrap;
@@ -341,12 +347,16 @@
 
                 <div class="params">
                     <div class="param">
-                        <label>Примеров в игре</label>
-                        <div class="picker" data-key="cnt" data-min="5" data-max="100" data-step="1" data-def="20"><div class="sel"></div><div class="wlist"></div></div>
+                        <label>Примеров</label>
+                        <div class="picker" data-key="cnt" data-min="5" data-max="100" data-step="1" data-def="5"><div class="sel"></div><div class="wlist"></div></div>
                     </div>
                     <div class="param">
                         <label>Время (мин)</label>
                         <div class="picker" data-key="tmin" data-min="0" data-max="60" data-step="1" data-def="0"><div class="sel"></div><div class="wlist"></div></div>
+                    </div>
+                    <div class="param">
+                        <label>На пример (сек)</label>
+                        <div class="picker" data-key="psec" data-min="0" data-max="300" data-step="1" data-def="0"><div class="sel"></div><div class="wlist"></div></div>
                     </div>
                 </div>
 
@@ -368,6 +378,7 @@
                 <div id="word-card">
                     <div id="progress">1/20</div>
                     <div id="word-display">...</div>
+                    <div id="card-timer" class="hidden">10</div>
                 </div>
             </div>
 
@@ -574,6 +585,7 @@
 
         let totalProblems = 20;
         let gameSeconds = 0; // 0 = без лимита времени; иначе игра до первого предела (время или количество)
+        let problemSec = 0;  // 0 = без лимита на пример
         const attemptsMax = 3;
 
         let problemIndex = 0;
@@ -592,6 +604,7 @@
         let pendingFn = null;
         let pendingRemaining = 0;
         let pendingStart = 0;
+        let cardTimerInterval = null;
         let totalSeconds = 0;
         let mainTimerInterval = null;
 
@@ -621,6 +634,7 @@
         const resultScreen = document.getElementById('result-screen');
         const wordCard = document.getElementById('word-card');
         const wordDisplay = document.getElementById('word-display');
+        const cardTimerEl = document.getElementById('card-timer');
         const nativeInput = document.getElementById('native-input');
         const pauseOverlay = document.getElementById('pause-overlay');
         const timerDisplay = document.getElementById('timer');
@@ -648,6 +662,7 @@
         function showSetup() {
             cancelSchedule();
             clearInterval(mainTimerInterval);
+            clearInterval(cardTimerInterval);
             nativeInput.blur();
             setupScreen.classList.remove('hidden');
             gameScreen.classList.add('hidden');
@@ -659,8 +674,10 @@
 
         function startGame() {
             cancelSchedule();
+            clearInterval(cardTimerInterval);
             totalProblems = getWheelValue('cnt');
             gameSeconds = getWheelValue('tmin') * 60;
+            problemSec = getWheelValue('psec');
 
             problemIndex = 0;
             correctCount = 0;
@@ -707,6 +724,7 @@
             isPaused = !isPaused;
             if (isPaused) {
                 pauseSchedule();
+                clearInterval(cardTimerInterval);
                 pauseOverlay.classList.remove('hidden');
                 nativeInput.blur();
                 pauseStartedAt = Date.now();
@@ -714,8 +732,24 @@
                 pauseOverlay.classList.add('hidden');
                 resumeSchedule();
                 if (!isProcessing && roundStartMs) roundPausedMs += Date.now() - pauseStartedAt;
-                if (!isProcessing) nativeInput.focus();
+                if (!isProcessing) {
+                    if (problemSec > 0) startCardCountdown();
+                    nativeInput.focus();
+                }
             }
+        }
+
+        function startCardCountdown() {
+            clearInterval(cardTimerInterval);
+            cardTimerEl.classList.remove('hidden');
+            const update = () => {
+                const remMs = pendingRemaining - (Date.now() - pendingStart);
+                const remSec = Math.max(0, Math.ceil(remMs / 1000));
+                cardTimerEl.innerText = remSec;
+                cardTimerEl.classList.toggle('low', remSec <= 5);
+            };
+            update();
+            cardTimerInterval = setInterval(update, 250);
         }
 
         function nextProblem() {
@@ -738,6 +772,13 @@
             progressDisplay.innerText = `${problemIndex + 1}/${totalProblems}`;
 
             cancelSchedule();
+            clearInterval(cardTimerInterval);
+            if (problemSec > 0) {
+                schedule(onProblemTimeout, problemSec * 1000);
+                startCardCountdown();
+            } else {
+                cardTimerEl.classList.add('hidden');
+            }
 
             roundStartMs = Date.now();
             roundPausedMs = 0;
@@ -776,6 +817,8 @@
 
             if (isCorrect) {
                 isProcessing = true;
+                cancelSchedule();
+                clearInterval(cardTimerInterval);
                 nativeInput.classList.add('input-success');
                 if (attempts === attemptsMax) sessionStats.first++;
                 sessionStats.msSum += roundElapsed();
@@ -794,6 +837,7 @@
 
                 if (attempts <= 0) {
                     isProcessing = true;
+                    clearInterval(cardTimerInterval);
                     sessionStats.fail++;
                     sessionStats.msSum += roundElapsed();
                     sessionStats.msCount++;
@@ -806,10 +850,22 @@
             }
         }
 
+        function onProblemTimeout() {
+            if (!isGameRunning || isPaused || isProcessing) return;
+            isProcessing = true;
+            clearInterval(cardTimerInterval);
+            sessionStats.fail++;
+            sessionStats.msSum += roundElapsed();
+            sessionStats.msCount++;
+            revealAnswer();
+            schedule(() => finishRound(false), 1500);
+        }
+
         function revealAnswer() {
             nativeInput.value = curProblem.ansText;
             nativeInput.classList.remove('input-error');
             nativeInput.classList.add('input-reveal');
+            cardTimerEl.classList.add('hidden');
         }
 
         function finishRound(success) {
@@ -826,6 +882,7 @@
             isGameRunning = false;
             cancelSchedule();
             clearInterval(mainTimerInterval);
+            clearInterval(cardTimerInterval);
             nativeInput.blur();
             gameScreen.classList.add('hidden');
             resultScreen.classList.remove('hidden');

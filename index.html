@@ -493,7 +493,18 @@
         //   деление   — делимое в диапазоне; без дробей — нацело.
         // Режим «Дроби»: точность 0,1; сложение/вычитание — хотя бы один операнд дробный;
         // умножение — дробь × целое; деление — целый делитель, дробный ответ.
+        // Микс: операции выдаются «мешком» из 8 (по 2 каждой, перемешаны) —
+        // пропорция держится даже при досрочном конце игры, серия одной операции ≤ 4.
         const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+        let mixBag = [];
+        function resetMixBag() { mixBag = []; }
+        function refillMixBag() {
+            mixBag = ['add', 'sub', 'mul', 'div', 'add', 'sub', 'mul', 'div'];
+            for (let i = mixBag.length - 1; i > 0; i--) {
+                const j = rand(0, i);
+                const t = mixBag[i]; mixBag[i] = mixBag[j]; mixBag[j] = t;
+            }
+        }
         function fmt(n) { return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '\u202F'); }
         function fmtDec(x10) {
             const i = Math.floor(x10 / 10), f = x10 % 10;
@@ -504,7 +515,11 @@
         }
 
         function genProblem(opKey, lo, hi, frac) {
-            const op = (opKey === 'mix') ? ['add', 'sub', 'mul', 'div'][rand(0, 3)] : opKey;
+            let op = opKey;
+            if (opKey === 'mix') {
+                if (!mixBag.length) refillMixBag();
+                op = mixBag.pop();
+            }
             for (let t = 0; t < 400; t++) {
                 if (op === 'add') {
                     if (frac) {
@@ -675,6 +690,7 @@
         function startGame() {
             cancelSchedule();
             clearInterval(cardTimerInterval);
+            resetMixBag();
             totalProblems = getWheelValue('cnt');
             gameSeconds = getWheelValue('tmin') * 60;
             problemSec = getWheelValue('psec');

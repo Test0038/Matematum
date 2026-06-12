@@ -26,6 +26,29 @@
     <link rel="apple-touch-startup-image" media="(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="splash/splash-1206x2622.png">
     <link rel="apple-touch-startup-image" media="(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="splash/splash-1320x2868.png">
     <link rel="apple-touch-startup-image" media="(device-width: 420px) and (device-height: 912px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="splash/splash-1260x2736.png">
+    <script>
+        // Заставка под точный размер экрана этого устройства (включая режим «Увеличение»):
+        // генерируется на лету и подхватывается iOS в момент «На экран “Домой”»
+        (function () {
+            try {
+                var w = screen.width, h = screen.height, r = window.devicePixelRatio || 1;
+                function addSplash(pw, ph, orient) {
+                    var c = document.createElement('canvas');
+                    c.width = pw; c.height = ph;
+                    var ctx = c.getContext('2d');
+                    ctx.fillStyle = '#0c0d11';
+                    ctx.fillRect(0, 0, pw, ph);
+                    var l = document.createElement('link');
+                    l.rel = 'apple-touch-startup-image';
+                    l.media = '(device-width: ' + w + 'px) and (device-height: ' + h + 'px) and (-webkit-device-pixel-ratio: ' + r + ') and (orientation: ' + orient + ')';
+                    l.href = c.toDataURL('image/png');
+                    document.head.appendChild(l);
+                }
+                addSplash(Math.round(w * r), Math.round(h * r), 'portrait');
+                addSplash(Math.round(h * r), Math.round(w * r), 'landscape');
+            } catch (e) {}
+        })();
+    </script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

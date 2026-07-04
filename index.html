@@ -649,6 +649,7 @@
         let attempts = 3;
         let correctCount = 0;
         let curProblem = null;
+        let lockedValue = null; // значение поля, защищённое от дописывания во время показа ответа
         let sessionStats = null;
         let roundStartMs = 0;
         let roundPausedMs = 0;
@@ -697,6 +698,11 @@
         const timerDisplay = document.getElementById('timer');
         const progressDisplay = document.getElementById('progress');
         const displayModeEl = document.getElementById('display-mode');
+
+        // Пока показывается ответ (белым/зелёным), ввод не может его изменить
+        nativeInput.addEventListener('input', () => {
+            if (lockedValue !== null && nativeInput.value !== lockedValue) nativeInput.value = lockedValue;
+        });
 
         // --- ВЫБОР РЕЖИМА И ДИАПАЗОНА ---
         let fracMode = false;
@@ -825,6 +831,7 @@
 
             nativeInput.value = '';
             nativeInput.className = '';
+            lockedValue = null;
             wordDisplay.innerText = curProblem.q;
             fitProblem();
             progressDisplay.innerText = `${problemIndex + 1}/${totalProblems}`;
@@ -878,6 +885,7 @@
                 cancelSchedule();
                 clearInterval(cardTimerInterval);
                 nativeInput.classList.add('input-success');
+                lockedValue = nativeInput.value;
                 if (attempts === attemptsMax) sessionStats.first++;
                 sessionStats.msSum += roundElapsed();
                 sessionStats.msCount++;
@@ -924,6 +932,7 @@
             nativeInput.classList.remove('input-error');
             nativeInput.classList.add('input-reveal');
             cardTimerEl.classList.add('hidden');
+            lockedValue = nativeInput.value;
         }
 
         function finishRound(success) {

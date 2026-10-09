@@ -352,6 +352,7 @@
 
         /* Компактное меню: прежние элементы + составные задания, без прокрутки. */
         #setup-screen { overflow: hidden; min-height: 0; padding: 8px 0; }
+        #setup-screen .menu-content { transform-origin: top center; }
         #setup-screen h1 { line-height: 46px; margin: 4px 0 14px; }
         #setup-screen .settings-block { padding: 14px; }
         .block-title { line-height: 20px; margin-bottom: 10px; }
@@ -565,16 +566,41 @@
     <script>
         const viewport = window.visualViewport;
         const appContainer = document.getElementById('app-viewport');
+        let menuFitFrame = null;
+        function queueMenuFit() {
+            if (menuFitFrame !== null) return;
+            menuFitFrame = requestAnimationFrame(() => {
+                menuFitFrame = null;
+                fitSetupMenu();
+            });
+        }
+        function fitSetupMenu() {
+            const setup = document.getElementById('setup-screen');
+            if (!setup || !setup.clientHeight) return;
+            const menu = setup.querySelector('.menu-content');
+            const values = Object.keys(wheels).map(key => [key, getWheelValue(key)]);
+            menu.style.transform = '';
+            const variants = [[false, false, false], [true, false, false], [true, true, false], [true, true, true]];
+            let available = 0;
+            for (const [compact, tight, short] of variants) {
+                appContainer.classList.toggle('menu-compact', compact);
+                appContainer.classList.toggle('menu-tight', tight);
+                appContainer.classList.toggle('menu-short', short);
+                const style = getComputedStyle(setup);
+                // Запас под нижнее скругление и тень кнопки «Начать».
+                available = Math.max(1, setup.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom) - 20);
+                if (menu.offsetHeight <= available) break;
+            }
+            // Очень низкая область во время скрытия клавиатуры тоже не обрезает меню.
+            if (menu.offsetHeight > available) menu.style.transform = `scale(${available / menu.offsetHeight})`;
+            values.forEach(([key, value]) => setWheelValue(key, value));
+        }
         function resizeHandler() {
             if (!viewport) return;
             appContainer.style.height = `${viewport.height}px`;
             const kbOpen = (window.innerHeight - viewport.height) > 100;
             appContainer.classList.toggle('kb-open', kbOpen);
-            const style = getComputedStyle(appContainer);
-            const usable = viewport.height - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
-            appContainer.classList.toggle('menu-compact', usable < 820);
-            appContainer.classList.toggle('menu-tight', usable < 780);
-            appContainer.classList.toggle('menu-short', usable < 700);
+            queueMenuFit();
             if (typeof fitProblem === 'function' && document.getElementById('game-screen') && !document.getElementById('game-screen').classList.contains('hidden')) requestAnimationFrame(fitProblem);
             window.scrollTo(0, 0);
         }
@@ -866,8 +892,20 @@
                 });
                 best = { numbers, operations, ans10: answer10, peak10: Math.max(...numbers, ...values), score: 0 };
             }
-            const tokens = best.numbers.map((v, i) => (i ? OPS[operations[i - 1]].sym + ' ' : '') + fmtDec(v));
+            const tokens = compoundTokens(best.numbers, operations);
             return { q: tokens.join(' '), tokens, numbers: best.numbers, operations, ans10: best.ans10, ansText: fmtDec(best.ans10) };
+        }
+
+        function compoundTokens(numbers, operations) {
+            const starts = new Set(), ends = new Set();
+            for (let i = 0; i < operations.length; i++) {
+                if (operations[i] !== 'mul' && operations[i] !== 'div') continue;
+                starts.add(i);
+                while (i < operations.length && (operations[i] === 'mul' || operations[i] === 'div')) i++;
+                ends.add(i);
+            }
+            return numbers.map((value, i) => (i ? OPS[operations[i - 1]].sym + ' ' : '') +
+                (starts.has(i) ? '(' : '') + fmtDec(value) + (ends.has(i) ? ')' : ''));
         }
 
         /* GEN:END */
@@ -966,7 +1004,7 @@
         // --- ВЫБОР РЕЖИМА И ДИАПАЗОНА ---
         let fracMode = false;
         function setOp(op, btn) {
-            if (op === 'mix') selectedOps = new Set(OP_KEYS);
+            if (op === 'mix') selectedOps = new Set(selectedOps.size === OP_KEYS.length ? ['mul'] : OP_KEYS);
             else if (selectedOps.has(op)) { if (selectedOps.size > 1) selectedOps.delete(op); }
             else selectedOps.add(op);
             currentOp = operationKey();
@@ -1008,6 +1046,7 @@
             pauseOverlay.classList.add('hidden');
             statsScreen.classList.add('hidden');
             detailScreen.classList.add('hidden');
+            queueMenuFit();
         }
 
         function startGame() {
@@ -1489,10 +1528,19 @@
             w.render();
         }
         document.querySelectorAll('.picker').forEach(buildWheelPicker);
-        new ResizeObserver(() => {
+        const layoutObserver = new ResizeObserver(() => {
             Object.values(wheels).forEach(w => w.render());
             if (!gameScreen.classList.contains('hidden')) fitProblem();
-        }).observe(appContainer);
+            queueMenuFit();
+        });
+        layoutObserver.observe(appContainer);
+        layoutObserver.observe(setupScreen);
+        layoutObserver.observe(setupScreen.querySelector('.menu-content'));
+        if (document.fonts) {
+            document.fonts.ready.then(queueMenuFit);
+            document.fonts.addEventListener('loadingdone', queueMenuFit);
+        }
+        queueMenuFit();
 
         // Автопауза при повороте в альбомную ориентацию
         const landscapeMq = window.matchMedia('(orientation: landscape)');

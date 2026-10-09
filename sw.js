@@ -1,7 +1,7 @@
 // Matematum — Service Worker
 // Стратегия: приложение отдаётся из кэша мгновенно, свежая версия подтягивается
 // в фоне и применяется со следующего запуска. Шрифты кэшируются при первом обращении.
-const CACHE = 'matematum-v4-layout';
+const CACHE = 'matematum-v5-wrapping';
 const PRECACHE = ['./', './index.html', './manifest.json'];
 
 self.addEventListener('install', e => {

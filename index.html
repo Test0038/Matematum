@@ -897,15 +897,22 @@
         }
 
         function compoundTokens(numbers, operations) {
-            const starts = new Set(), ends = new Set();
-            for (let i = 0; i < operations.length; i++) {
-                if (operations[i] !== 'mul' && operations[i] !== 'div') continue;
-                starts.add(i);
-                while (i < operations.length && (operations[i] === 'mul' || operations[i] === 'div')) i++;
-                ends.add(i);
+            const tokens = [];
+            for (let first = 0; first < numbers.length;) {
+                let last = first;
+                while (last < operations.length && (operations[last] === 'mul' || operations[last] === 'div')) last++;
+                const prefix = first ? OPS[operations[first - 1]].sym + ' ' : '';
+                if (last === first + 1) {
+                    // Одно действие в скобках переносится только целиком.
+                    tokens.push(prefix + '(' + fmtDec(numbers[first]) + ' ' + OPS[operations[first]].sym + ' ' + fmtDec(numbers[last]) + ')');
+                } else {
+                    // Длинной цепочке ×/: внешние скобки не нужны.
+                    // Оставляем прежний приоритет и порядок слева направо.
+                    for (let i = first; i <= last; i++) tokens.push((i ? OPS[operations[i - 1]].sym + ' ' : '') + fmtDec(numbers[i]));
+                }
+                first = last + 1;
             }
-            return numbers.map((value, i) => (i ? OPS[operations[i - 1]].sym + ' ' : '') +
-                (starts.has(i) ? '(' : '') + fmtDec(value) + (ends.has(i) ? ')' : ''));
+            return tokens;
         }
 
         /* GEN:END */

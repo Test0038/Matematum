@@ -349,6 +349,63 @@
         .rstat b { color: #fff; font-weight: 900; font-size: 1.15rem; font-variant-numeric: tabular-nums; }
 
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+
+        /* Компактное меню: прежние элементы + составные задания, без прокрутки. */
+        #setup-screen { overflow: hidden; min-height: 0; padding: 8px 0; }
+        #setup-screen h1 { line-height: 46px; margin: 4px 0 14px; }
+        #setup-screen .settings-block { padding: 14px; }
+        .block-title { line-height: 20px; margin-bottom: 10px; }
+        .mode-btn { min-height: 44px; height: 44px; padding: 0 5px; }
+        .compound-row { display: grid; grid-template-columns: 1fr 78px; gap: 12px; align-items: center; margin-top: 10px; }
+        .compound-param { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+        .compound-param label { font-size: .73rem; line-height: 16px; font-weight: 700; color: var(--text-muted); }
+        .compound-param.disabled { opacity: .35; }
+        .compound-param.disabled .picker { pointer-events: none; }
+        .picker { --wheel-height: 96px; height: var(--wheel-height); }
+        .picker .sel { top: calc((var(--wheel-height) - 32px) / 2); }
+        .wlist { padding: calc((var(--wheel-height) - 32px) / 2) 0; overscroll-behavior: contain; }
+        .wslot { height: 30px; scroll-snap-align: center; }
+        .witem { scroll-snap-align: none; }
+        .mini-picker { --wheel-height: 66px; border-radius: 13px; }
+        #setup-screen button.main-btn { margin-top: 14px; min-height: 60px; }
+        .param > label { line-height: 16px; }
+        .menu-compact #setup-screen { padding: 4px 0; }
+        .menu-compact #setup-screen h1 { margin-bottom: 10px; }
+        .menu-compact #setup-screen .settings-block { padding: 12px; margin-bottom: 10px; }
+        .menu-compact .block-title { margin-bottom: 8px; }
+        .menu-compact .picker:not(.mini-picker) { --wheel-height: 84px; }
+        .menu-compact .compound-row { margin-top: 8px; }
+        .menu-compact #setup-screen button.main-btn { margin-top: 12px; }
+        .menu-tight #setup-screen h1 { font-size: 2rem; line-height: 40px; margin: 0 0 6px; }
+        .menu-tight #setup-screen .settings-block { padding: 10px 12px; margin-bottom: 8px; }
+        .menu-tight .mode-grid { gap: 6px; }
+        .menu-tight .mode-grid + .mode-grid { margin-top: 6px; }
+        .menu-tight .block-title { font-size: .8rem; line-height: 16px; margin-bottom: 6px; }
+        .menu-tight .picker:not(.mini-picker) { --wheel-height: 66px; }
+        .menu-tight .mini-picker { --wheel-height: 54px; }
+        .menu-tight .compound-row { margin-top: 6px; }
+        .menu-tight .param > label { margin-bottom: 5px; }
+        .menu-tight #setup-screen button.main-btn { min-height: 52px; padding: 12px; margin-top: 10px; }
+        .menu-short #setup-screen { padding: 0; }
+        .menu-short #setup-screen button.main-btn { margin-top: 8px; }
+        .menu-short .operations-block { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        .menu-short .operations-block .block-title { grid-column: 1 / -1; margin-bottom: 0; }
+        .menu-short .operations-block .mode-grid { display: contents; }
+        .menu-short .operations-block .super-btn { grid-column: auto; }
+        .menu-short .compound-row { grid-column: 1 / -1; margin-top: 0; }
+        #word-display.compound { white-space: normal; line-height: 1.25; width: 100%; padding: 0 16px; overflow-wrap: normal; }
+        #word-display.compound .expression-token { display: inline-block; white-space: nowrap; }
+        #word-card.compound-card { min-height: 165px; height: auto; max-height: none; padding: 46px 0; }
+        #native-input { min-width: 0; width: 0; }
+        #res-mode.extended-mode, #det-mode.extended-mode { margin-left: 12px; max-width: 65%; text-align: right; overflow-wrap: anywhere; }
+        .header { grid-template-columns: 46px minmax(0, 1fr) 46px; }
+        .info-center { min-width: 0; }
+        @media (max-width: 370px) {
+            #setup-screen .menu-content { width: calc(100% + 12px); max-width: none; }
+            #setup-screen h1 { font-size: 1.85rem; padding-right: 25px; }
+            .mode-btn { font-size: .76rem; gap: 5px; }
+            .param > label { font-size: .68rem; letter-spacing: 0; }
+        }
     </style>
 </head>
 <body>
@@ -360,17 +417,24 @@
                 <button class="stats-cbtn" id="stats-corner-btn" onclick="showStats()" aria-label="Статистика"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="6" y1="20" x2="6" y2="12"/><line x1="12" y1="20" x2="12" y2="6"/><line x1="18" y1="20" x2="18" y2="9"/></svg></button>
                 <h1>Matematum</h1>
 
-                <div class="settings-block">
-                    <div class="block-title">ОПЕРАЦИЯ</div>
+                <div class="settings-block operations-block">
+                    <div class="block-title">ОПЕРАЦИИ</div>
                     <div class="mode-grid">
-                        <button class="mode-btn op-btn active" onclick="setOp('add', this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Сложение</button>
-                        <button class="mode-btn op-btn" onclick="setOp('sub', this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>Вычитание</button>
-                        <button class="mode-btn op-btn" onclick="setOp('mul', this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>Умножение</button>
-                        <button class="mode-btn op-btn" onclick="setOp('div', this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><circle cx="12" cy="6.5" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="17.5" r="1.4" fill="currentColor" stroke="none"/></svg>Деление</button>
-                        <button class="mode-btn op-btn super-btn" onclick="setOp('mix', this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>Микс</button>
+                        <button class="mode-btn op-btn active" data-op="add" aria-pressed="true" onclick="setOp('add', this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Сложение</button>
+                        <button class="mode-btn op-btn" data-op="sub" aria-pressed="false" onclick="setOp('sub', this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>Вычитание</button>
+                        <button class="mode-btn op-btn" data-op="mul" aria-pressed="false" onclick="setOp('mul', this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>Умножение</button>
+                        <button class="mode-btn op-btn" data-op="div" aria-pressed="false" onclick="setOp('div', this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><circle cx="12" cy="6.5" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="17.5" r="1.4" fill="currentColor" stroke="none"/></svg>Деление</button>
+                        <button class="mode-btn op-btn super-btn" data-op="mix" aria-pressed="false" onclick="setOp('mix', this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>Микс</button>
                     </div>
                     <div class="mode-grid">
-                        <button class="mode-btn super-btn" id="frac-btn" onclick="toggleFrac(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.4"/><circle cx="17.5" cy="17.5" r="2.4"/></svg>Дроби</button>
+                        <button class="mode-btn super-btn" id="frac-btn" aria-pressed="false" onclick="toggleFrac(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.4"/><circle cx="17.5" cy="17.5" r="2.4"/></svg>Дроби</button>
+                    </div>
+                    <div class="compound-row">
+                        <button class="mode-btn" id="compound-btn" aria-pressed="false" onclick="toggleCompound(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h10M4 18h10M19 10v8M15 14h8"/></svg>Составные</button>
+                        <div class="compound-param disabled" id="compound-param">
+                            <label id="terms-label">Чисел</label>
+                            <div class="picker mini-picker" data-key="terms" data-min="3" data-max="10" data-step="1" data-def="3" aria-labelledby="terms-label" aria-disabled="true"><div class="sel"></div><div class="wlist"></div></div>
+                        </div>
                     </div>
                 </div>
 
@@ -506,6 +570,12 @@
             appContainer.style.height = `${viewport.height}px`;
             const kbOpen = (window.innerHeight - viewport.height) > 100;
             appContainer.classList.toggle('kb-open', kbOpen);
+            const style = getComputedStyle(appContainer);
+            const usable = viewport.height - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
+            appContainer.classList.toggle('menu-compact', usable < 820);
+            appContainer.classList.toggle('menu-tight', usable < 780);
+            appContainer.classList.toggle('menu-short', usable < 700);
+            if (typeof fitProblem === 'function' && document.getElementById('game-screen') && !document.getElementById('game-screen').classList.contains('hidden')) requestAnimationFrame(fitProblem);
             window.scrollTo(0, 0);
         }
         if (viewport) {
@@ -535,13 +605,13 @@
         //   деление   — делимое в диапазоне; без дробей — нацело.
         // Режим «Дроби»: точность 0,1; сложение/вычитание — хотя бы один операнд дробный;
         // умножение — дробь × целое; деление — целый делитель, дробный ответ.
-        // Микс: операции выдаются «мешком» из 8 (по 2 каждой, перемешаны) —
-        // пропорция держится даже при досрочном конце игры, серия одной операции ≤ 4.
+        // Смешанные режимы: по 2 каждой выбранной операции в перемешанном наборе.
+        // Каждый полный набор сбалансирован; незаконченный набор может отличаться.
         const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
         let mixBag = [];
-        function resetMixBag() { mixBag = []; }
-        function refillMixBag() {
-            mixBag = ['add', 'sub', 'mul', 'div', 'add', 'sub', 'mul', 'div'];
+        function resetMixBag() { mixBag = []; compoundUsage = {}; }
+        function refillMixBag(keys = ['add', 'sub', 'mul', 'div']) {
+            mixBag = [...keys, ...keys];
             for (let i = mixBag.length - 1; i > 0; i--) {
                 const j = rand(0, i);
                 const t = mixBag[i]; mixBag[i] = mixBag[j]; mixBag[j] = t;
@@ -632,12 +702,181 @@
                 const q = rand(qMin, qMax);
                 return mk(d * q * 10, ':', d * 10, q * 10);
             }
-            return mk(20, '+', 20, 40);
+            const anchor = hi * 10;
+            if (op === 'add') {
+                const left = Math.floor(anchor / 2) - (frac ? 1 : 0);
+                return mk(left, '+', anchor - left, anchor);
+            }
+            if (op === 'sub') {
+                const right = Math.floor(anchor / 2) - (frac ? 1 : 0);
+                return mk(anchor, '−', right, anchor - right);
+            }
+            if (op === 'mul') {
+                const factor10 = frac ? 15 : 20;
+                const other = Math.floor(anchor / factor10);
+                return mk(factor10, '×', other * 10, factor10 * other);
+            }
+            const quotient10 = Math.floor(anchor / 2) - (frac ? 1 : 0);
+            return mk(quotient10 * 2, ':', 20, quotient10);
         }
+        // Составные: крупнейшее число среди операндов, промежуточных результатов
+        // и ответа лежит в выбранном диапазоне; все они положительны и не выше hi.
+        // Выбранные операции распределяются равномерно по позициям.
+        // Каждый блок внутри задания содержит разные операции до исчерпания набора.
+        const OP_KEYS = ['add', 'sub', 'mul', 'div'];
+        let compoundUsage = {};
+        function compoundOperations(keys, count) {
+            const result = [], used = new Set();
+            for (let i = 0; i < count; i++) {
+                if (used.size === keys.length) used.clear();
+                const available = keys.filter(k => !used.has(k));
+                const least = Math.min(...available.map(k => compoundUsage[k] || 0));
+                const candidates = available.filter(k => (compoundUsage[k] || 0) === least);
+                const op = candidates[rand(0, candidates.length - 1)];
+                compoundUsage[op] = (compoundUsage[op] || 0) + 1;
+                used.add(op); result.push(op);
+            }
+            return result;
+        }
+        function selectedKeys() { return OP_KEYS.filter(k => selectedOps.has(k)); }
+        function operationKey() { const keys = selectedKeys(); return keys.length === 4 ? 'mix' : keys.join('+'); }
+        function operationName(key) {
+            if (OPS[key]) return OPS[key].name;
+            return key.split('+').filter(k => OPS[k]).map(k => OPS[k].sym).join(' ');
+        }
+        function modeName(key, fr, terms = 2, rangeName = null) {
+            return operationName(key) + (rangeName !== null ? ' · ' + rangeName : '') + (terms > 2 ? ' · ' + terms + (terms < 5 ? ' числа' : ' чисел') : '') + (fr ? ' · дроби' : '');
+        }
+        function drawOperation(keys) {
+            if (!mixBag.length) refillMixBag(keys);
+            return mixBag.pop();
+        }
+        // Все значения — целые десятые доли. Обратное построение цепочки
+        // гарантирует точное деление и обычный приоритет ×/: над +/−.
+        function makeChain(value10, operations, hi, frac) {
+            let current = value10, peak10 = value10, nontrivial = 0;
+            const numbers = [], unit = frac ? 1 : 10, factorLimit = Math.max(3, Math.floor(Math.sqrt(hi)));
+            for (let i = operations.length - 1; i >= 0; i--) {
+                const op = operations[i], choices = [];
+                const limit = op === 'mul'
+                    ? Math.min(factorLimit, Math.floor(current / unit))
+                    : Math.min(factorLimit, Math.floor(hi * 10 / current));
+                for (let d = 2; d <= limit; d++) {
+                    if (op === 'div' || (current % d === 0 && (current / d) % unit === 0)) choices.push(d);
+                }
+                const factor = choices.length ? choices[rand(0, choices.length - 1)] : 1;
+                current = op === 'mul' ? current / factor : current * factor;
+                numbers.unshift(factor * 10);
+                peak10 = Math.max(peak10, current, factor * 10);
+                if (factor > 1) nontrivial++;
+            }
+            numbers.unshift(current);
+            return { numbers, peak10, nontrivial };
+        }
+        function partition(total, count) {
+            // Сопоставимые по величине части; сумма сохраняется точно.
+            const weights = Array.from({ length: count }, () => rand(6, 14));
+            const weightSum = weights.reduce((a, b) => a + b, 0);
+            const parts = weights.map(w => 1 + Math.floor((total - count) * w / weightSum));
+            let remainder = total - parts.reduce((a, b) => a + b, 0);
+            const order = Array.from({ length: count }, (_, i) => i);
+            for (let i = count - 1; i > 0; i--) { const j = rand(0, i); [order[i], order[j]] = [order[j], order[i]]; }
+            for (let i = 0; remainder > 0; i++, remainder--) parts[order[i % count]]++;
+            return parts;
+        }
+        function genCompound(keys, lo, hi, frac, count) {
+            const operations = compoundOperations(keys, count - 1);
+            const groups = [{ sign: 1, operations: [] }];
+            operations.forEach(op => {
+                if (op === 'add' || op === 'sub') groups.push({ sign: op === 'add' ? 1 : -1, operations: [] });
+                else groups[groups.length - 1].operations.push(op);
+            });
+            const unit = frac ? 1 : 10, low = lo * 10 / unit, high = hi * 10 / unit;
+            const chainSlots = operations.filter(k => k === 'mul' || k === 'div').length;
+            let best = null;
+            for (let attempt = 0; attempt < 48; attempt++) {
+                let targets;
+                const onlyAdd = operations.every(k => k === 'add');
+                const onlySub = operations.every(k => k === 'sub');
+                const onlyMul = operations.every(k => k === 'mul');
+                const onlyDiv = operations.every(k => k === 'div');
+                if (onlyAdd) {
+                    targets = partition(rand(Math.max(low, count), high), count).map(v => v * unit);
+                } else if (onlySub) {
+                    const total = rand(Math.max(low, count), high);
+                    const parts = partition(total, count);
+                    targets = [total * unit, ...parts.slice(1).map(v => v * unit)];
+                } else if (groups.length === 1) {
+                    let value;
+                    if (onlyMul) value = rand(low, high);
+                    else if (onlyDiv) value = rand(1, Math.max(1, Math.floor(high / Math.pow(2, Math.min(count - 1, 6)))));
+                    else value = rand(1, high);
+                    targets = [value * unit];
+                } else {
+                    let positives = groups.slice(1).filter(g => g.sign === 1).length;
+                    let negatives = groups.length - 1 - positives;
+                    // Если первая цепочка содержит деление, диапазон может задавать
+                    // её делимое, а не результат: не вынуждаем деление на единицу.
+                    const firstLow = groups[0].operations.includes('div') ? 1 : low;
+                    let balance = rand(Math.max(firstLow, negatives + 1), high - positives);
+                    targets = [balance * unit];
+                    for (let i = 1; i < groups.length; i++) {
+                        let amount;
+                        if (groups[i].sign === 1) {
+                            positives--;
+                            const room = high - positives - balance;
+                            amount = rand(1, Math.max(1, Math.floor(room * 0.8)));
+                            balance += amount;
+                        } else {
+                            negatives--;
+                            const room = balance - negatives - 1;
+                            amount = rand(1, Math.max(1, Math.floor(room * 0.8)));
+                            balance -= amount;
+                        }
+                        targets.push(amount * unit);
+                    }
+                }
+                const chains = groups.map((g, i) => makeChain(targets[i], g.operations, hi, frac));
+                let answer10 = 0, peak10 = 0, score = 0;
+                chains.forEach((chain, i) => {
+                    answer10 += groups[i].sign * targets[i];
+                    peak10 = Math.max(peak10, chain.peak10, answer10);
+                    score += chain.nontrivial;
+                });
+                if (peak10 < lo * 10 || peak10 > hi * 10 || answer10 <= 0) continue;
+                const numbers = chains.flatMap(c => c.numbers);
+                if (frac && answer10 % 10 === 0 && !numbers.some(v => v % 10 !== 0)) continue;
+                const candidate = { numbers, operations, ans10: answer10, peak10, score };
+                if (!best || score > best.score) best = candidate;
+                if (score === chainSlots) break;
+            }
+            if (!best) {
+                // Конструктивная страховка с теми же операциями, длиной и диапазоном.
+                // Единицы для ×/: не меняют результат; +/− остаются содержательными.
+                let balance = Math.max(lo * 10, (groups.length + 1) * 10) + (frac ? 5 : 0);
+                balance = Math.min(balance, hi * 10 - groups.length * 10);
+                const numbers = [balance], values = [balance];
+                let answer10 = balance;
+                operations.forEach(op => {
+                    const n = 10;
+                    numbers.push(n);
+                    if (op === 'add') answer10 += n;
+                    if (op === 'sub') answer10 -= n;
+                    values.push(answer10);
+                });
+                best = { numbers, operations, ans10: answer10, peak10: Math.max(...numbers, ...values), score: 0 };
+            }
+            const tokens = best.numbers.map((v, i) => (i ? OPS[operations[i - 1]].sym + ' ' : '') + fmtDec(v));
+            return { q: tokens.join(' '), tokens, numbers: best.numbers, operations, ans10: best.ans10, ansText: fmtDec(best.ans10) };
+        }
+
         /* GEN:END */
 
         // --- СОСТОЯНИЕ ---
         let currentOp = 'add';
+        let selectedOps = new Set(['add']);
+        let compoundMode = false;
+        let sessionTerms = 2;
         let currentRange = 0;
 
         let totalProblems = 20;
@@ -647,6 +886,7 @@
 
         let problemIndex = 0;
         let attempts = 3;
+        let roundFailed = false;
         let correctCount = 0;
         let curProblem = null;
         let lockedValue = null; // значение поля, защищённое от дописывания во время показа ответа
@@ -665,6 +905,7 @@
         let cardTimerInterval = null;
         let totalSeconds = 0;
         let mainTimerInterval = null;
+        let errorTimer = null, errorPending = null, errorRemaining = 0, errorStarted = 0;
 
         // Планировщик игровых переходов: пауза замораживает и возобновляет отложенные действия
         function schedule(fn, delay) {
@@ -684,6 +925,24 @@
         function cancelSchedule() {
             clearTimeout(gameTimer);
             pendingFn = null;
+        }
+
+        // Очистка ошибочного ввода имеет собственные 500 мс и замораживается
+        // на паузе; она не может стирать уже принятый ответ или следующую задачу.
+        function cancelErrorFeedback() {
+            clearTimeout(errorTimer); errorTimer = null; errorPending = null;
+        }
+        function scheduleErrorFeedback(fn, delay) {
+            cancelErrorFeedback();
+            errorPending = fn; errorRemaining = delay; errorStarted = Date.now();
+            errorTimer = setTimeout(() => { errorTimer = null; errorPending = null; fn(); }, delay);
+        }
+        function pauseErrorFeedback() {
+            if (errorPending) errorRemaining = Math.max(0, errorRemaining - (Date.now() - errorStarted));
+            clearTimeout(errorTimer); errorTimer = null;
+        }
+        function resumeErrorFeedback() {
+            if (errorPending) scheduleErrorFeedback(errorPending, errorRemaining);
         }
 
         // DOM
@@ -707,9 +966,14 @@
         // --- ВЫБОР РЕЖИМА И ДИАПАЗОНА ---
         let fracMode = false;
         function setOp(op, btn) {
-            currentOp = op;
-            document.querySelectorAll('.op-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
+            if (op === 'mix') selectedOps = new Set(OP_KEYS);
+            else if (selectedOps.has(op)) { if (selectedOps.size > 1) selectedOps.delete(op); }
+            else selectedOps.add(op);
+            currentOp = operationKey();
+            document.querySelectorAll('.op-btn').forEach(b => {
+                const active = b.dataset.op === 'mix' ? selectedOps.size === 4 : selectedOps.has(b.dataset.op);
+                b.classList.toggle('active', active); b.setAttribute('aria-pressed', active);
+            });
         }
         function setRange(idx, btn) {
             currentRange = idx;
@@ -719,11 +983,22 @@
         function toggleFrac(btn) {
             fracMode = !fracMode;
             btn.classList.toggle('active', fracMode);
+            btn.setAttribute('aria-pressed', fracMode);
+        }
+
+        function toggleCompound(btn) {
+            compoundMode = !compoundMode;
+            btn.classList.toggle('active', compoundMode);
+            btn.setAttribute('aria-pressed', compoundMode);
+            document.getElementById('compound-param').classList.toggle('disabled', !compoundMode);
+            const picker = document.querySelector('[data-key="terms"]');
+            picker.setAttribute('aria-disabled', !compoundMode);
+            picker.tabIndex = compoundMode ? 0 : -1;
         }
 
         // --- ИГРА ---
         function showSetup() {
-            cancelSchedule();
+            cancelSchedule(); cancelErrorFeedback();
             clearInterval(mainTimerInterval);
             clearInterval(cardTimerInterval);
             nativeInput.blur();
@@ -736,12 +1011,13 @@
         }
 
         function startGame() {
-            cancelSchedule();
+            cancelSchedule(); cancelErrorFeedback();
             clearInterval(cardTimerInterval);
             resetMixBag();
             totalProblems = getWheelValue('cnt');
             gameSeconds = getWheelValue('tmin') * 60;
             problemSec = getWheelValue('psec');
+            sessionTerms = compoundMode ? getWheelValue('terms') : 2;
 
             problemIndex = 0;
             correctCount = 0;
@@ -752,7 +1028,7 @@
 
             totalSeconds = 0;
             updateMainTimer();
-            displayModeEl.innerText = OPS[currentOp].name + ' · ' + RANGE_NAMES[currentRange] + (fracMode ? ' · дроби' : '');
+            displayModeEl.innerText = modeName(currentOp, fracMode, sessionTerms, RANGE_NAMES[currentRange]);
 
             setupScreen.classList.add('hidden');
             gameScreen.classList.remove('hidden');
@@ -787,14 +1063,14 @@
             if (!isGameRunning) return;
             isPaused = !isPaused;
             if (isPaused) {
-                pauseSchedule();
+                pauseSchedule(); pauseErrorFeedback();
                 clearInterval(cardTimerInterval);
                 pauseOverlay.classList.remove('hidden');
                 nativeInput.blur();
                 pauseStartedAt = Date.now();
             } else {
                 pauseOverlay.classList.add('hidden');
-                resumeSchedule();
+                resumeSchedule(); resumeErrorFeedback();
                 if (!isProcessing && roundStartMs) roundPausedMs += Date.now() - pauseStartedAt;
                 if (!isProcessing) {
                     if (problemSec > 0) startCardCountdown();
@@ -818,6 +1094,7 @@
 
         function nextProblem() {
             if (!isGameRunning) return;
+            cancelErrorFeedback(); roundFailed = false;
             isProcessing = false;
 
             if (problemIndex >= totalProblems) {
@@ -826,13 +1103,23 @@
             }
 
             const [lo, hi] = RANGES[currentRange];
-            curProblem = genProblem(currentOp, lo, hi, fracMode);
+            const keys = selectedKeys();
+            curProblem = sessionTerms > 2 ? genCompound(keys, lo, hi, fracMode, sessionTerms)
+                : genProblem(keys.length === 1 ? keys[0] : drawOperation(keys), lo, hi, fracMode);
             attempts = attemptsMax;
 
             nativeInput.value = '';
             nativeInput.className = '';
             lockedValue = null;
-            wordDisplay.innerText = curProblem.q;
+            wordDisplay.classList.toggle('compound', sessionTerms > 2);
+            wordCard.classList.toggle('compound-card', sessionTerms > 2);
+            wordDisplay.replaceChildren();
+            if (curProblem.tokens) curProblem.tokens.forEach((token, i) => {
+                if (i) wordDisplay.appendChild(document.createTextNode(' '));
+                const span = document.createElement('span'); span.className = 'expression-token'; span.textContent = token;
+                wordDisplay.appendChild(span);
+            });
+            else wordDisplay.textContent = curProblem.q;
             fitProblem();
             progressDisplay.innerText = `${problemIndex + 1}/${totalProblems}`;
 
@@ -851,10 +1138,13 @@
         }
 
         function fitProblem() {
-            let size = 48; // базовый размер цифр (3rem)
+            if (!wordDisplay || !wordCard) return;
+            let size = sessionTerms > 4 ? 34 : 48;
+            const area = document.querySelector('.game-area');
             wordDisplay.style.fontSize = size + 'px';
             const maxW = wordCard.clientWidth - 4;
-            while (size > 22 && wordDisplay.scrollWidth > maxW) {
+            const maxH = Math.max(90, area.clientHeight - 26);
+            while (size > 22 && ((sessionTerms > 2 ? wordDisplay.scrollWidth > wordDisplay.clientWidth + 1 : wordDisplay.scrollWidth > maxW) || (sessionTerms > 2 && wordCard.offsetHeight > maxH))) {
                 size -= 2;
                 wordDisplay.style.fontSize = size + 'px';
             }
@@ -873,17 +1163,21 @@
             e.preventDefault();
             if (!isGameRunning || isPaused || isProcessing) return;
 
-            const raw = nativeInput.value.trim().replace(',', '.').replace(/[^\d.]/g, '');
-            if (!raw || raw === '.') return;
-            const val = parseFloat(raw);
+            const raw = nativeInput.value.trim().replace(/\s/g, '').replace(',', '.');
+            if (!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(raw)) return;
+            const val = Number(raw);
             if (!isFinite(val)) return;
-
-            const isCorrect = Math.round(val * 10) === curProblem.ans10;
+            const [whole, fraction = ''] = raw.split('.');
+            const integer = Number(whole || 0);
+            const exactTenths = Number.isSafeInteger(integer) && !/[1-9]/.test(fraction.slice(1));
+            const isCorrect = exactTenths && integer * 10 + Number(fraction[0] || 0) === curProblem.ans10;
 
             if (isCorrect) {
+                cancelErrorFeedback();
                 isProcessing = true;
                 cancelSchedule();
                 clearInterval(cardTimerInterval);
+                nativeInput.classList.remove('input-error');
                 nativeInput.classList.add('input-success');
                 lockedValue = nativeInput.value;
                 if (attempts === attemptsMax) sessionStats.first++;
@@ -895,13 +1189,16 @@
                 sessionStats.wrong++;
                 nativeInput.classList.add('input-error');
 
-                setTimeout(() => {
-                    if (!isGameRunning) return;
+                const problem = curProblem;
+                if (attempts > 0) scheduleErrorFeedback(() => {
+                    if (!isGameRunning || isProcessing || curProblem !== problem) return;
                     nativeInput.classList.remove('input-error');
-                    if (attempts > 0) nativeInput.value = '';
+                    nativeInput.value = '';
                 }, 500);
+                else cancelErrorFeedback();
 
                 if (attempts <= 0) {
+                    roundFailed = true;
                     isProcessing = true;
                     clearInterval(cardTimerInterval);
                     sessionStats.fail++;
@@ -918,6 +1215,7 @@
 
         function onProblemTimeout() {
             if (!isGameRunning || isPaused || isProcessing) return;
+            cancelErrorFeedback(); roundFailed = true;
             isProcessing = true;
             clearInterval(cardTimerInterval);
             sessionStats.fail++;
@@ -936,6 +1234,7 @@
         }
 
         function finishRound(success) {
+            roundFailed = false;
             problemIndex++;
             if (success) correctCount++;
             if (success) {
@@ -947,7 +1246,7 @@
 
         function endGame() {
             isGameRunning = false;
-            cancelSchedule();
+            cancelSchedule(); cancelErrorFeedback();
             clearInterval(mainTimerInterval);
             clearInterval(cardTimerInterval);
             nativeInput.blur();
@@ -955,11 +1254,12 @@
             resultScreen.classList.remove('hidden');
 
             const ss = sessionStats;
-            const answered = problemIndex;
+            const answered = problemIndex + (roundFailed ? 1 : 0);
             const avgMs = Math.round(ss.msSum / Math.max(1, ss.msCount));
             const acc = answered > 0 ? Math.round(ss.first / answered * 100) : 0;
 
-            document.getElementById('res-mode').innerText = OPS[currentOp].name + (fracMode ? ' · дроби' : '');
+            document.getElementById('res-mode').innerText = modeName(currentOp, fracMode, sessionTerms);
+            document.getElementById('res-mode').classList.toggle('extended-mode', sessionTerms > 2 || currentOp.includes('+'));
             document.getElementById('res-range').innerText = RANGE_NAMES[currentRange];
             document.getElementById('final-score').innerText = correctCount + " / " + answered;
             document.getElementById('final-accuracy').innerText = acc + "%";
@@ -969,7 +1269,7 @@
             document.getElementById('final-time').innerText = fmtDur(totalSeconds);
 
             recordSession({
-                d: Date.now(), op: currentOp, rg: currentRange, fr: fracMode ? 1 : 0, rounds: answered,
+                d: Date.now(), op: currentOp, rg: currentRange, fr: fracMode ? 1 : 0, terms: sessionTerms, rounds: answered,
                 first: ss.first, fail: ss.fail, wrong: ss.wrong,
                 avgMs: avgMs, dur: totalSeconds
             });
@@ -982,8 +1282,8 @@
         const statsScreen = document.getElementById('stats-screen');
         const detailScreen = document.getElementById('detail-screen');
 
-        function sessTitle(op, rg, fr) {
-            return (OPS[op] ? OPS[op].name : op) + ' · ' + (RANGE_NAMES[rg] || rg) + (fr ? ' · дроби' : '');
+        function sessTitle(op, rg, fr, terms = 2) {
+            return modeName(op, fr, terms, RANGE_NAMES[rg] || rg);
         }
         function loadStats() {
             try {
@@ -997,7 +1297,7 @@
         }
         function foldIntoAgg(st, sess) {
             const dt = new Date(sess.d);
-            const key = dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '|' + sess.op + '|' + sess.rg + '|' + (sess.fr ? 1 : 0);
+            const key = dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '|' + sess.op + '|' + sess.rg + '|' + (sess.fr ? 1 : 0) + (sess.terms > 2 ? '|' + sess.terms : '');
             const a = st.agg[key] || (st.agg[key] = { s: 0, r: 0, first: 0, wrong: 0, msSum: 0, dur: 0 });
             a.s++; a.r += sess.rounds; a.first += sess.first; a.wrong += sess.wrong;
             a.msSum += sess.avgMs; a.dur += sess.dur;
@@ -1031,7 +1331,8 @@
             const x = st.sessions.find(sess => sess.d === ts);
             if (!x) return;
             document.getElementById('detail-title').innerText = fmtDate(x.d);
-            document.getElementById('det-mode').innerText = (OPS[x.op] ? OPS[x.op].name : x.op) + (x.fr ? ' · дроби' : '');
+            document.getElementById('det-mode').innerText = modeName(x.op, x.fr, x.terms || 2);
+            document.getElementById('det-mode').classList.toggle('extended-mode', x.terms > 2 || x.op.includes('+'));
             document.getElementById('det-range').innerText = RANGE_NAMES[x.rg] || x.rg;
             document.getElementById('det-score').innerText = (x.rounds - x.fail) + ' / ' + x.rounds;
             document.getElementById('det-acc').innerText = (x.rounds ? Math.round(x.first / x.rounds * 100) : 0) + '%';
@@ -1090,7 +1391,7 @@
             let html = det.slice().reverse().map(x => {
                 const a = x.rounds ? Math.round(x.first / x.rounds * 100) : 0;
                 return '<div class="hrow" data-ts="' + x.d + '">' +
-                    '<div class="hmain"><b>' + sessTitle(x.op, x.rg, x.fr) + '</b>' +
+                    '<div class="hmain"><b>' + sessTitle(x.op, x.rg, x.fr, x.terms || 2) + '</b>' +
                     '<span>' + fmtDate(x.d) + ' · ' + x.rounds + ' примеров · ' + (x.avgMs / 1000).toFixed(1) + ' с/пример</span></div>' +
                     '<div class="hacc">' + a + '%</div>' +
                     '<button class="hdel" data-label="✕">✕</button></div>';
@@ -1101,7 +1402,7 @@
                 const yy = ym.split('-')[0], mm = ym.split('-')[1];
                 const acc2 = a.r ? Math.round(a.first / a.r * 100) : 0;
                 return '<div class="hrow agg" data-agg="' + key + '">' +
-                    '<div class="hmain"><b>' + MONTHS_RU[+mm - 1] + ' ' + yy + ' · ' + sessTitle(op, rg, fr) + '</b>' +
+                    '<div class="hmain"><b>' + MONTHS_RU[+mm - 1] + ' ' + yy + ' · ' + sessTitle(op, rg, fr, +parts[4] || 2) + '</b>' +
                     '<span>Архив · ' + a.s + ' сессий · ' + (a.msSum / a.s / 1000).toFixed(1) + ' с/пример</span></div>' +
                     '<div class="hacc">' + acc2 + '%</div>' +
                     '<button class="hdel" data-label="✕">✕</button></div>';
@@ -1122,7 +1423,7 @@
         });
 
         // === КОЛЁСА НАСТРОЕК (iOS-стиль) ===
-        const WH_ITEM = 30, WH_H = 120, WH_PAD = (WH_H - WH_ITEM) / 2, WH_CENTER = WH_H / 2;
+        const WH_ITEM = 30;
         const wheels = {};
         function buildWheelPicker(picker) {
             const key = picker.dataset.key;
@@ -1131,12 +1432,32 @@
             const step = +(picker.dataset.step || 1), def = +picker.dataset.def;
             const values = [];
             for (let v = min; v <= max; v += step) values.push(v);
-            values.forEach(v => { const d = document.createElement('div'); d.className = 'witem'; d.textContent = v === 0 ? '∞' : v; list.appendChild(d); });
+            values.forEach(v => { const slot = document.createElement('div'); slot.className = 'wslot'; const d = document.createElement('div'); d.className = 'witem'; d.textContent = v === 0 ? '∞' : v; slot.appendChild(d); list.appendChild(slot); });
             const items = [...list.querySelectorAll('.witem')];
+            picker.setAttribute('role', 'spinbutton'); picker.tabIndex = key === 'terms' ? -1 : 0;
+            picker.setAttribute('aria-label', picker.getAttribute('aria-labelledby') ? 'Чисел' : picker.closest('.param').querySelector('label').textContent);
+            picker.setAttribute('aria-valuemin', min); picker.setAttribute('aria-valuemax', max);
+            picker.addEventListener('keydown', e => {
+                if (picker.getAttribute('aria-disabled') === 'true') return;
+                if (['ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) {
+                    e.preventDefault();
+                    const current = idx();
+                    const next = e.key === 'Home' ? 0 : e.key === 'End' ? values.length - 1 : current + (e.key === 'ArrowUp' ? -1 : 1);
+                    setWheelValue(key, values[Math.max(0, Math.min(values.length - 1, next))]);
+                }
+            });
+            items.forEach((item, i) => item.addEventListener('click', () => {
+                if (picker.getAttribute('aria-disabled') !== 'true') setWheelValue(key, values[i]);
+            }));
             function render() {
-                const sc = list.scrollTop + WH_CENTER;
+                if (!list.clientHeight) return;
+                const center = list.clientHeight / 2;
+                const pad = parseFloat(getComputedStyle(list).paddingTop);
+                const sc = list.scrollTop + center;
+                picker.setAttribute('aria-valuenow', values[idx()]);
+                picker.setAttribute('aria-valuetext', values[idx()] === 0 ? 'Без ограничения' : values[idx()]);
                 items.forEach((it, i) => {
-                    const c = i * WH_ITEM + WH_ITEM / 2 + WH_PAD;
+                    const c = i * WH_ITEM + WH_ITEM / 2 + pad;
                     const dist = c - sc;
                     const ang = Math.max(-70, Math.min(70, (dist / WH_ITEM) * 24));
                     it.style.transform = `rotateX(${-ang}deg) translateZ(${-Math.abs(dist) * 0.25}px) scale(${Math.max(0.78, 1 - Math.abs(dist) / 320)})`;
@@ -1146,14 +1467,19 @@
             }
             function idx() { return Math.max(0, Math.min(values.length - 1, Math.round(list.scrollTop / WH_ITEM))); }
             let raf = null;
-            list.addEventListener('scroll', () => { if (raf) return; raf = requestAnimationFrame(() => { render(); picker.dataset.current = values[idx()]; raf = null; }); });
+            list.addEventListener('scroll', () => { if (raf) return; raf = requestAnimationFrame(() => { render(); if (list.clientHeight) picker.dataset.current = values[idx()]; raf = null; }); });
             const startIdx = Math.max(0, values.indexOf(def));
             list.scrollTop = startIdx * WH_ITEM;
             picker.dataset.current = values[startIdx];
             render();
             wheels[key] = { picker, list, values, render };
         }
-        function getWheelValue(key) { return +wheels[key].picker.dataset.current; }
+        function getWheelValue(key) {
+            const w = wheels[key];
+            const i = Math.max(0, Math.min(w.values.length - 1, Math.round(w.list.scrollTop / WH_ITEM)));
+            if (w.list.clientHeight) w.picker.dataset.current = w.values[i];
+            return +w.picker.dataset.current;
+        }
         function setWheelValue(key, v) {
             const w = wheels[key]; if (!w) return;
             let i = w.values.indexOf(v);
@@ -1163,6 +1489,10 @@
             w.render();
         }
         document.querySelectorAll('.picker').forEach(buildWheelPicker);
+        new ResizeObserver(() => {
+            Object.values(wheels).forEach(w => w.render());
+            if (!gameScreen.classList.contains('hidden')) fitProblem();
+        }).observe(appContainer);
 
         // Автопауза при повороте в альбомную ориентацию
         const landscapeMq = window.matchMedia('(orientation: landscape)');
